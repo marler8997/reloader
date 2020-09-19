@@ -33,9 +33,6 @@ argv_example_files += sys/checked_write.c
 out/argv-example: out sys/examples/argv-example.c $(argv_example_files)
 	zig cc -static $(flags) -nostdlib $(sys_cflags) -oout/argv-example sys/examples/argv-example.c $(argv_example_files)
 
-# for now, libfoo.so.0 should be in the same directory as exe
-libfoo_runpath += -Wl,-rpath,.
-
 reload_files += sys/streq.c
 reload_files += sys/stringlen.c
 reload_files += sys/format.c
@@ -44,10 +41,12 @@ reload_files += sys/checked_write.c
 reload_files += reload.c
 
 out/app-nolibc: out app-nolibc.c out/libfoo.so.0
-	zig cc $(flags) -nostdlib $(sys_cflags) $(reloadable_c_ld_flags) $(reload_files) sys/arch/x86_64/start.s app-nolibc.c -oout/app-nolibc $(libfoo_runpath) -Lout -lfoo
+	zig cc -o$@ $(flags) $(sys_cflags) $(reloadable_c_ld_flags) $(reload_files) -Lout -lfoo app-nolibc.c -nostdlib sys/arch/x86_64/start.s
 
 out/app-withlibc: out app-withlibc.c out/libfoo.so.0
-	zig cc $(flags) $(sys_cflags) $(reloadable_c_ld_flags) $(reload_files) app-withlibc.c $(app_withlibc_files) -oout/app-withlibc $(libfoo_runpath) -Lout -lfoo
+	zig cc -o$@ $(flags) $(sys_cflags) $(reloadable_c_ld_flags) $(reload_files) -Lout -lfoo app-withlibc.c $(app_withlibc_files)
+	# Not sure how to get the linker not to include the ELF interpreter section when using libc
+	#objcopy --remove-section .interp out/app-withlibc
 
 out/o/reload.o: out/o reload.c
 	zig cc -nostdlib -c -oout/o/reload.o reload.c
