@@ -21,12 +21,9 @@ void write_msg_unsigned(int fd, const char *prefix, unsigned value, const char *
 int main(int argc, char *argv[], char *envp[])
 {
   sys_runtime_check();
-  write_string_literal(1, "in main\n");
   checkreload(argc, argv, &envp);
-  
-  //reloader();
   write_msg_unsigned(1, "example message to print integer 1234: ", 1234, "\n");
   write_msg_unsigned(1, "foopassthru(123) = ", foopassthru(123), "\n");
   write_string_literal(1, "Success");
-  exit(0);
+  return 0;
 }
