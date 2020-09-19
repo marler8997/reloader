@@ -65,31 +65,26 @@ fn doReload() noreturn {
     const dynamic_linker = getDynamicLinker(allocator);
     std.debug.warn("RELOADER: dynamic linker '{}'\n", .{dynamic_linker});
 
-    // allocSentinel won't work, see https://github.com/ziglang/zig/issues/6370
-    const argv = allocator.alloc(?[*:0]const u8, std.os.argv.len + 2) catch |e|
+    const argv = allocator.allocSentinel(?[*:0]const u8, std.os.argv.len + 1, null) catch |e|
         std.debug.panic("{}", .{e});
     argv[0] = dynamic_linker;
     for (std.os.argv) |arg, i| {
         argv[i+1] = arg;
     }
-    argv[argv.len - 1] = null;
+    std.debug.assert(argv.ptr[argv.len] == null);
 
     //
     // Copy environment variables so we can add __RELOADED__=1 to temporarily
     // indicate that we have been reloaded, until a better way can be found
     //
-    // allocSentinel wont' work, see https://github.com/ziglang/zig/issues/6370
-    const envp = allocator.alloc(?[*:0]u8, std.os.environ.len + 2) catch |e| std.debug.panic("{}", .{e});
+    const envp = allocator.allocSentinel(?[*:0]u8, std.os.environ.len + 1, null) catch |e| std.debug.panic("{}", .{e});
     envp[0] = "__RELOADED__=1";
     for (std.os.environ) |env, i| {
         envp[i+1] = env;
     }
-    envp[std.os.environ.len - 1] = null;
+    std.debug.assert(envp.ptr[envp.len] == null);
 
     std.debug.warn("RELOADER: calling execve!\n", .{});
-    const e = std.os.execveZ(
-        dynamic_linker,
-        @ptrCast([*:null]?[*:0]u8, argv.ptr),
-        @ptrCast([*:null]const ?[*:0]const u8, envp));
+    const e = std.os.execveZ(dynamic_linker, argv, envp);
     std.debug.panic("{}", .{e});
 }
