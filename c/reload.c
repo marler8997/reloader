@@ -1,17 +1,37 @@
 #include <sys/exit.h>
 #include <sys/stringlen.h>
 #include <sys/streq.h>
+#include <sys/format.h>
+#include <sys/mmap.h>
+#include <sys/write.h>
 #include <sys/checked_write.h>
 
 #define write_string_literal(fd, lit) checked_write(fd, lit, sizeof(lit)-1)
 
+// exits and esures code will be non-zero
+_Noreturn void exit_non_zero(unsigned char c)
+{
+  exit(c ? c : 0xff);
+}
+
 static void *alloc(size_t size)
 {
-  // TODO: do I need to align size?  I don't think I actually do
-  //mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-
-  write_string_literal(2, "Error: alloc not implemented\n");
-  exit(1);
+  size_t addr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  {
+    const unsigned errno = syscall_errno(addr);
+    if (errno) {
+      char msg[100];
+      unsigned msg_len = 0;
+      msg_len += format_str     (msg+msg_len, "Error: mmap ");
+      msg_len += format_size_t  (msg+msg_len, size);
+      msg_len += format_str     (msg+msg_len, " failed, errno=");
+      msg_len += format_unsigned(msg+msg_len, errno);
+      msg_len += format_char    (msg+msg_len, '\n');
+      write(2, msg, msg_len);
+      exit_non_zero((unsigned char)errno);
+    }
+  }
+  return (void*)addr;
 }
 
 _Noreturn void reload(int argc, char *argv[], char *envp[], const char *loader)
