@@ -4,14 +4,17 @@ flags += -g
 #flags += -fno-pie
 #flags += -no-pie
 
+# TODO: not sure if I want this or not
+#reloadable_c_ld_flags += -fPIE
+
 # flags to compile against the sys library
 sys_cflags += "-Isys/include"
 sys_cflags += "-DSYS_ARCH_X86_64"
 
 all_files += out/nomain
 all_files += out/argv-example
-all_files += out/static-app
-all_files += out/dynamic-app
+#all_files += out/static-app
+all_files += out/app
 all: $(all_files)
 
 nomain_files += sys/arch/x86_64/syscall.s
@@ -30,6 +33,9 @@ argv_example_files += sys/checked_write.c
 out/argv-example: out sys/examples/argv-example.c $(argv_example_files)
 	zig cc -static $(flags) -nostdlib $(sys_cflags) -oout/argv-example sys/examples/argv-example.c $(argv_example_files)
 
+# for now, libfoo.so.0 should be in the same directory as exe
+libfoo_runpath += -Wl,-rpath,.
+
 app_files += sys/arch/x86_64/syscall.s
 app_files += sys/arch/x86_64/start.s
 app_files += sys/format.c
@@ -37,17 +43,18 @@ app_files += sys/streq.c
 app_files += sys/stringlen.c
 app_files += sys/checked_write.c
 app_files += reload.c
-out/static-app: out app.c $(app_files) out/o/foo.o
-	zig cc $(flags) -nostdlib $(sys_cflags) app.c $(app_files) -oout/static-app -static out/o/foo.o
+#out/static-app: out app.c $(app_files) out/o/foo.o
+#	zig cc $(flags) -nostdlib $(sys_cflags) $(reloadable_c_ld_flags) app.c $(app_files) -oout/static-app -static out/o/foo.o
 
-out/dynamic-app: out app.c out/libfoo.so
-	zig cc $(flags) -nostdlib $(sys_cflags) app.c $(app_files) -oout/dynamic-app -Lout -lfoo
+out/app: out app.c out/libfoo.so.0
+	zig cc $(flags) -nostdlib $(sys_cflags) $(reloadable_c_ld_flags) app.c $(app_files) -oout/app $(libfoo_runpath) -Lout -lfoo
 
 out/o/reload.o: out/o reload.c
 	zig cc -nostdlib -c -oout/o/reload.o reload.c
 
-out/libfoo.so: out out/o/foo.o
-	zig cc -shared -o out/libfoo.so out/o/foo.o
+out/libfoo.so.0 out/libfoo.so: out out/o/foo.o
+	zig cc -shared -o out/libfoo.so.0 out/o/foo.o
+	ln -sf libfoo.so.0 out/libfoo.so
 
 out/o/foo.o: out/o foo.c
 	zig cc -c -oout/o/foo.o foo.c
