@@ -8,18 +8,27 @@ flags += -g
 sys_cflags += "-Isys/include"
 sys_cflags += "-DSYS_ARCH_X86_64"
 
-
-all_files += out/hello
+all_files += out/nomain
+all_files += out/argv-example
 all_files += out/static-app
 all_files += out/dynamic-app
 all: $(all_files)
 
-hello_files += sys/arch/x86_64/syscall.s
-hello_files += sys/format.c
+nomain_files += sys/arch/x86_64/syscall.s
+nomain_files += sys/format.c
+nomain_files += sys/checked_write.c
 # NOTE: can't get gcc to work, it's generating instructions that require the %fs register, but it's not
 #       setup so I'm getting a segfault...not sure how to prevent it from doing that
-out/hello: out hello.c $(hello_files)
-	zig cc -static $(flags) -nostdlib $(sys_cflags) -oout/hello hello.c $(hello_files)
+out/nomain: out sys/examples/nomain.c $(nomain_files)
+	zig cc -static $(flags) -nostdlib $(sys_cflags) -oout/nomain sys/examples/nomain.c $(nomain_files)
+
+argv_example_files += sys/arch/x86_64/syscall.s
+argv_example_files += sys/arch/x86_64/start.s
+argv_example_files += sys/format.c
+argv_example_files += sys/stringlen.c
+argv_example_files += sys/checked_write.c
+out/argv-example: out sys/examples/argv-example.c $(argv_example_files)
+	zig cc -static $(flags) -nostdlib $(sys_cflags) -oout/argv-example sys/examples/argv-example.c $(argv_example_files)
 
 app_files += sys/arch/x86_64/syscall.s
 app_files += sys/format.c
