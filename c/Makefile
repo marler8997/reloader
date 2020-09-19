@@ -13,8 +13,7 @@ sys_cflags += "-DSYS_ARCH_X86_64"
 
 all_files += out/nomain
 all_files += out/argv-example
-#all_files += out/static-app
-all_files += out/app
+all_files += out/app-nolibc
 all: $(all_files)
 
 nomain_files += sys/arch/x86_64/syscall.s
@@ -36,18 +35,16 @@ out/argv-example: out sys/examples/argv-example.c $(argv_example_files)
 # for now, libfoo.so.0 should be in the same directory as exe
 libfoo_runpath += -Wl,-rpath,.
 
-app_files += sys/arch/x86_64/syscall.s
-app_files += sys/arch/x86_64/start.s
-app_files += sys/format.c
-app_files += sys/streq.c
-app_files += sys/stringlen.c
-app_files += sys/checked_write.c
-app_files += reload.c
-#out/static-app: out app.c $(app_files) out/o/foo.o
-#	zig cc $(flags) -nostdlib $(sys_cflags) $(reloadable_c_ld_flags) app.c $(app_files) -oout/static-app -static out/o/foo.o
+app_nolibc_files += sys/arch/x86_64/syscall.s
+app_nolibc_files += sys/arch/x86_64/start.s
+app_nolibc_files += sys/format.c
+app_nolibc_files += sys/streq.c
+app_nolibc_files += sys/stringlen.c
+app_nolibc_files += sys/checked_write.c
+app_nolibc_files += reload.c
 
-out/app: out app.c out/libfoo.so.0
-	zig cc $(flags) -nostdlib $(sys_cflags) $(reloadable_c_ld_flags) app.c $(app_files) -oout/app $(libfoo_runpath) -Lout -lfoo
+out/app-nolibc: out app-nolibc.c out/libfoo.so.0
+	zig cc $(flags) -nostdlib $(sys_cflags) $(reloadable_c_ld_flags) app-nolibc.c $(app_nolibc_files) -oout/app-nolibc $(libfoo_runpath) -Lout -lfoo
 
 out/o/reload.o: out/o reload.c
 	zig cc -nostdlib -c -oout/o/reload.o reload.c
