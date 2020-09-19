@@ -31,8 +31,11 @@ out/argv-example: out sys/examples/argv-example.c $(argv_example_files)
 	zig cc -static $(flags) -nostdlib $(sys_cflags) -oout/argv-example sys/examples/argv-example.c $(argv_example_files)
 
 app_files += sys/arch/x86_64/syscall.s
+app_files += sys/arch/x86_64/start.s
 app_files += sys/format.c
 app_files += sys/streq.c
+app_files += sys/stringlen.c
+app_files += sys/checked_write.c
 app_files += reload.c
 out/static-app: out app.c $(app_files) out/o/foo.o
 	zig cc $(flags) -nostdlib $(sys_cflags) app.c $(app_files) -oout/static-app -static out/o/foo.o

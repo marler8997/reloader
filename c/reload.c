@@ -1,19 +1,33 @@
+#include <sys/exit.h>
+#include <sys/stringlen.h>
 #include <sys/streq.h>
-#include <sys/write.h>
+#include <sys/checked_write.h>
 
-#define write_string_literal(fd, lit) write(fd, lit, sizeof(lit)-1)
+#define write_string_literal(fd, lit) checked_write(fd, lit, sizeof(lit)-1)
 
 static void *alloc(size_t size)
 {
-  // TODO: not implemented
-  return 0;
+  // TODO: do I need to align size?  I don't think I actually do
+  //mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+  write_string_literal(2, "Error: alloc not implemented\n");
+  exit(1);
 }
 
-void reload(char *argv[], char *envp[], const char *loader)
+_Noreturn void reload(int argc, char *argv[], char *envp[], const char *loader)
 {
+    write_string_literal(1, "RELOADER: reloading with this loader: ");
+    checked_write(1, loader, stringlen(loader));
+    checked_write(1, "\n", 1);
+
+    //need to allocate a new argv
+    const char **new_argc = alloc(sizeof(char*) * (argc + 2));
+
+    write_string_literal(1, "RELOADER: not fully implemented");
+    exit(1);
 }
 
-void checkedReload(char *argv[], char **envp[])
+void checkreload(int argc, char *argv[], char **envp[])
 {
     write_string_literal(2, "RELOADER: called\n");
 
@@ -29,5 +43,5 @@ void checkedReload(char *argv[], char **envp[])
     // just hardcode the loader for now
     const char *loader = "/nix/store/xg6ilb9g9zhi2zg1dpi4zcp288rhnvns-glibc-2.30/lib/ld-linux-x86-64.so.2";
 
-    reload(argv, *envp, loader);
+    reload(argc, argv, *envp, loader);
 }
