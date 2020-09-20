@@ -56,7 +56,7 @@ _Noreturn void reload(int argc, char *argv[], char *envp[], const char *loader)
       new_envp[i+1] = envp[i];
     }
     new_envp[envc + 2] = 0;
-    size_t result = execve(loader, new_argv, new_envp);
+    size_t result = sys_execve(loader, new_argv, new_envp);
     unsigned errno = syscall_errno(result);
     {
       char msg[100];
